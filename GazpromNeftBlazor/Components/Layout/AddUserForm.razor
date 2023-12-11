@@ -1,0 +1,58 @@
+﻿@using AutoMapper
+@using Blazored.Modal
+@using GazpromNeftBlazor.ViewModels
+<div>
+    <EditForm Model="_model" OnValidSubmit="SubmitForm">
+        <label for="@_model.LastName"></label>
+        <InputText @bind-Value="_model.LastName" />
+
+        <label for="@_model.FirstName"></label>
+        <InputText @bind-Value="_model.FirstName" />
+
+        <label for="@_model.Patronymic"></label>
+        <InputText @bind-Value="_model.Patronymic" />
+
+        <label for="@_model.Phone"></label>
+        <InputText @bind-Value="_model.Phone" />
+
+        <label for="@_model.Email"></label>
+        <InputText @bind-Value="_model.Email" />
+
+        <button type="submit">Создать</button>
+        <button @onclick="Cancel">Выход</button>
+    </EditForm>
+</div>
+
+@code {
+    private readonly AddUserModel _model = new();
+    [Inject]
+    public required IMapper Mapper { get; set; }
+
+    [Inject]
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    protected override void OnInitialized() => BlazoredModal.SetTitle("Введите данные пользователя");
+
+    private async Task SubmitForm()
+    {
+        if(await AddUser())
+        {
+            await BlazoredModal.CloseAsync(ModalResult.Ok(_model.FirstName));
+        }
+    }
+    private async Task Cancel() => await BlazoredModal.CancelAsync();
+
+    private async Task<bool> AddUser()
+    {
+        var uri = "http://localhost:5167/User";
+        using (var client = new HttpClient())
+        {
+            var response = await client.PostAsJsonAsync<AddUserModel>(uri, _model);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
+        }
+    }
+}

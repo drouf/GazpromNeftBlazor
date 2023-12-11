@@ -1,0 +1,53 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using AutoMapper
+@using GazpromNeftBlazor.DTO
+@using GazpromNeftBlazor.ViewModels
+@using GazpromNeftBlazor.Components.Layout
+
+<PageTitle>Пользователи</PageTitle>
+
+<h1>Пользователи</h1>
+
+<button @onclick="ShowAddUserModal">Добавить</button>
+<UserTable Users="@_users"></UserTable>
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; } = default!;
+    private IEnumerable<IndexUserModel> _users = [];
+    
+    [Inject] public required IMapper Mapper { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUsersAsync();
+    }
+
+    private async Task GetUsersAsync()
+    {
+        var uri = "http://localhost:5167/User";
+        using(var client = new HttpClient())
+        {
+            var response = await client.GetAsync(uri);
+            if (response.IsSuccessStatusCode)
+            {
+                var usersDto = await response.Content.ReadFromJsonAsync<IEnumerable<UserDto>>();
+                _users = Mapper.Map<IEnumerable<UserDto>, IEnumerable<IndexUserModel>>(usersDto ?? []);
+            }
+        }
+    }
+
+    private async Task ShowAddUserModal()
+    {
+        var addUserModal = Modal.Show<AddUserForm>();
+        var result = await addUserModal.Result;
+
+        if (result.Cancelled)
+        {
+            Console.WriteLine("Modal was cancelled");
+        }
+        else if (result.Confirmed)
+        {
+            Console.WriteLine("Modal was closed");
+        }
+    }
+}
